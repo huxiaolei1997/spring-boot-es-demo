@@ -1,0 +1,6 @@
+server:
+  port: 8080
+spring:
+  elasticsearch:
+    cluster-nodes: 127.0.0.1:9200,127.0.0.1:9201,127.0.0.1:9202
+    cluster-name: imooc-es-cluster
