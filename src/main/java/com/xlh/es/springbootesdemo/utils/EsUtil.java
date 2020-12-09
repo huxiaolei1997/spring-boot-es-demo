@@ -360,7 +360,10 @@ public class EsUtil {
     }
 
 
-
+    /**
+     * scroll 适合非实时大数据量分页
+     * @param index
+     */
     public void searchAllDataByScroll(String index) {
 //        SearchResponse searchResponse = restHighLevelClient.search()
         Scroll scroll = new Scroll(TimeValue.timeValueMillis(1L));
@@ -416,6 +419,12 @@ public class EsUtil {
     }
 
 
+    /**
+     * https://www.elastic.co/guide/en/elasticsearch/reference/7.x/paginate-search-results.html#search-after
+     * 适合实时大数据量分页
+     * @param index
+     * @throws IOException
+     */
     public void searchAfter(String index) throws IOException {
         String searchAfter =null;
         Object[] objects = new Object[]{};
