@@ -19,8 +19,7 @@ import org.elasticsearch.action.get.GetRequest;
 import org.elasticsearch.action.get.GetResponse;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.index.IndexResponse;
-import org.elasticsearch.action.search.SearchRequest;
-import org.elasticsearch.action.search.SearchResponse;
+import org.elasticsearch.action.search.*;
 import org.elasticsearch.action.support.master.AcknowledgedResponse;
 import org.elasticsearch.action.update.UpdateRequest;
 import org.elasticsearch.action.update.UpdateResponse;
@@ -34,6 +33,7 @@ import org.elasticsearch.common.Strings;
 import org.elasticsearch.common.text.Text;
 import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.common.xcontent.XContentType;
+import org.elasticsearch.search.Scroll;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.elasticsearch.search.fetch.subphase.FetchSourceContext;
@@ -354,6 +354,62 @@ public class EsUtil {
             return setSearchResponse(response, highlightField);
         }
         return null;
+    }
+
+
+
+    public void searchAllDataByScroll(String index) {
+//        SearchResponse searchResponse = restHighLevelClient.search()
+        Scroll scroll = new Scroll(TimeValue.timeValueMillis(1L));
+        SearchRequest searchRequest = new SearchRequest(index);
+        searchRequest.scroll(scroll);
+
+        SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
+        searchSourceBuilder.query();
+        searchSourceBuilder.size(5);
+        searchRequest.source(searchSourceBuilder);
+
+        try {
+            SearchResponse searchResponse = restHighLevelClient.search(searchRequest, RequestOptions.DEFAULT);
+
+            String scrollId = searchResponse.getScrollId();
+
+            SearchHit[] hits = searchResponse.getHits().getHits();
+
+            for (SearchHit hit : hits) {
+                //
+            }
+
+            while (hits != null && hits.length > 0) {
+                SearchScrollRequest searchScrollRequest = new SearchScrollRequest(scrollId);
+                searchScrollRequest.scroll(scroll);
+
+                SearchResponse response = restHighLevelClient.scroll(searchScrollRequest, RequestOptions.DEFAULT);
+                scrollId = searchResponse.getScrollId();
+                hits = response.getHits().getHits();
+
+                if (hits != null && hits.length > 0) {
+                    System.out.println("-----下一页-----");
+                    for (SearchHit searchHit : hits) {
+                        System.out.println(searchHit.getSourceAsString());
+                    }
+                }
+            }
+
+            //清除滚屏
+            ClearScrollRequest clearScrollRequest = new ClearScrollRequest();
+            clearScrollRequest.addScrollId(scrollId);//也可以选择setScrollIds()将多个scrollId一起使用
+            ClearScrollResponse clearScrollResponse = null;
+            try {
+                clearScrollResponse = restHighLevelClient.clearScroll(clearScrollRequest,RequestOptions.DEFAULT);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            boolean succeeded = clearScrollResponse.isSucceeded();
+            System.out.println("succeeded:" + succeeded);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 }
 
