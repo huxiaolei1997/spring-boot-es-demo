@@ -361,7 +361,7 @@ public class EsUtil {
 
 
     /**
-     * scroll 适合非实时大数据量分页
+     * scroll 适合非实时大数据量分页，适合数据迁移
      * @param index
      */
     public void searchAllDataByScroll(String index) {
@@ -421,7 +421,8 @@ public class EsUtil {
 
     /**
      * https://www.elastic.co/guide/en/elasticsearch/reference/7.x/paginate-search-results.html#search-after
-     * 适合实时大数据量分页
+     * 适合实时大数据量分页，不能跳页
+     * search_after 适用于深度分页+ 排序，因为每一页的数据依赖于上一页最后一条数据，所以无法跳页请求 >=5.0 版本支持
      * @param index
      * @throws IOException
      */
