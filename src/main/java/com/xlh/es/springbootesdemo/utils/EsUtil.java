@@ -49,6 +49,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import static org.elasticsearch.index.query.QueryBuilders.matchAllQuery;
+import static org.elasticsearch.index.query.QueryBuilders.matchQuery;
+
 /**
  * es 的工具类
  *
@@ -363,9 +366,8 @@ public class EsUtil {
         Scroll scroll = new Scroll(TimeValue.timeValueMillis(1L));
         SearchRequest searchRequest = new SearchRequest(index);
         searchRequest.scroll(scroll);
-
         SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
-        searchSourceBuilder.query();
+        searchSourceBuilder.query(matchAllQuery());
         searchSourceBuilder.size(5);
         searchRequest.source(searchSourceBuilder);
 
@@ -384,6 +386,7 @@ public class EsUtil {
                 SearchScrollRequest searchScrollRequest = new SearchScrollRequest(scrollId);
                 searchScrollRequest.scroll(scroll);
 
+//                searchScrollRequest.ty
                 SearchResponse response = restHighLevelClient.scroll(searchScrollRequest, RequestOptions.DEFAULT);
                 scrollId = searchResponse.getScrollId();
                 hits = response.getHits().getHits();
@@ -408,6 +411,36 @@ public class EsUtil {
             boolean succeeded = clearScrollResponse.isSucceeded();
             System.out.println("succeeded:" + succeeded);
         } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+
+    public void searchAfter(String index) throws IOException {
+        String searchAfter =null;
+        Object[] objects = new Object[]{};
+        try {
+            for (int i = 0; i < 100; i++) {
+                SearchRequest searchRequest = new SearchRequest(index);
+                SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
+                searchSourceBuilder.query(matchQuery("year_month", "yearMonth"));
+                searchSourceBuilder.size(1000);
+                searchSourceBuilder.sort("sort_id", SortOrder.ASC);
+                if(objects.length>0) {
+                    searchSourceBuilder.searchAfter(objects);
+                }
+                searchRequest.source(searchSourceBuilder);
+                System.out.println(searchRequest.source().toString());
+                SearchResponse searchResponse = restHighLevelClient.search(searchRequest, RequestOptions.DEFAULT);
+                System.out.println(searchResponse);
+                SearchHit[] hits = searchResponse.getHits().getHits();
+                objects = hits[hits.length-1].getSortValues();
+
+                System.out.println(hits);
+            }
+
+
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }
